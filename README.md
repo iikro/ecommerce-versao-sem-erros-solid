@@ -4,12 +4,38 @@ Este é o e-commerce do Projeto 1 já refatorado (SRP, OCP e LSP). Ele é o pont
 
 ## Como rodar
 
+### 1. Instalação e preparação do banco
+
 ```bash
 npm install
+cp .env.example .env
 npm run prisma:migrate
 npm run prisma:seed
-npm run dev
 ```
+
+### 2. Modos de execução (`APP_ENV`)
+
+O projeto possui dois modos de execução configurados via variável `APP_ENV` no arquivo `.env` (ou diretamente na linha de comando), gerenciados exclusivamente pelo container de IoC (`src/container/container.ts`):
+
+* **Modo Desenvolvimento (`APP_ENV=dev` — padrão):**
+  * **Pedidos:** Persistidos no SQLite via `PrismaOrderRepository`.
+  * **E-mail:** Enviado via `EtherealMailProvider` (Nodereal/Ethereal SMTP, requer conexão com a internet e retorna a URL de visualização em `emailPreview`).
+  * Para rodar:
+    ```bash
+    # No .env: APP_ENV=dev
+    npm run dev
+    ```
+
+* **Modo Teste (`APP_ENV=test` — funciona 100% offline):**
+  * **Pedidos:** Armazenados em memória (array) via `InMemoryOrderRepository`.
+  * **E-mail:** Impresso diretamente no terminal via `ConsoleMailProvider` (não requer internet).
+  * Para rodar:
+    ```bash
+    # No .env: APP_ENV=test (ou via linha de comando)
+    APP_ENV=test npm run dev
+    ```
+
+### 3. Testando a API
 
 A API sobe em `http://localhost:3000`. Teste com:
 
@@ -24,22 +50,23 @@ curl -X POST http://localhost:3000/orders \
 }'
 ```
 
-Produto `1` é o livro físico (R$ 100 + R$ 10 de frete), produto `2` é o e-book (R$ 50, sem frete). Formas de pagamento: `credit_card`, `debit_card` e `pix`.
+Produto `1` é o livro físico (R$ 100 + R$ 10 de frete = **R$ 110**), produto `2` é o e-book (R$ 50, sem frete = **R$ 50**). Formas de pagamento: `credit_card`, `debit_card` e `pix`.
 
 ## Estrutura
 
 ```
 src/
+├── container/     # types.ts (Symbols) e container.ts (IoC InversifyJS)
 ├── domain/        # produtos, pedido e erros de negócio
-├── repositories/  # IOrderRepository, IProductRepository e as versões Prisma
-├── providers/     # IMailProvider e EtherealMailProvider
+├── repositories/  # IOrderRepository, IProductRepository, Prisma e InMemory
+├── providers/     # IMailProvider, EtherealMailProvider e ConsoleMailProvider
 ├── payments/      # IPaymentMethod, uma classe por forma de pagamento e o registro
 ├── services/      # OrderService e NotificationService
 ├── controllers/   # OrderController: só HTTP
-└── app.ts         # monta as dependências na mão
+└── app.ts         # pede o OrderController ao container e registra a rota
 ```
 
-Os services recebem tudo pelo construtor, e as classes concretas só aparecem no `app.ts`.
+Os services recebem tudo pelo construtor, e as classes concretas só aparecem no `src/container/container.ts`.
 
 ---
 
