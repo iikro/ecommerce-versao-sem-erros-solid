@@ -8,3 +8,4 @@ curl -X POST http://localhost:3000/orders \
     "paymentMethod": "credit_card",
     "paymentDetails": { "cardNumber": "1234567812345678", "cvv": "123" }
   }'
+
